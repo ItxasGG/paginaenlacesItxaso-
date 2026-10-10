@@ -12,6 +12,7 @@
   <meta property="og:description" content="Gestión del estrés, autoestima y cambios vitales. Desde quién eres, no desde lo que haces.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.itxasocoach.com">
+  <meta property="og:image" content="foto.jpg">
   <meta name="theme-color" content="#5b8b4f">
 
   <!-- Tipografía moderna Google Fonts -->
@@ -219,13 +220,19 @@
       user-select: none;
     }
 
-    /* Estilo preparado si se añade foto real */
+    /* Estilo de la foto de perfil */
     .avatar-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center 20%;
       border-radius: 50%;
-      display: none; /* Por defecto se muestran las iniciales IG */
+      display: block;
+      transition: var(--transition-smooth);
+    }
+
+    .avatar-wrapper:hover .avatar-img {
+      transform: scale(1.05);
     }
 
     /* Badge decorativo sutil de bienestar */
@@ -624,11 +631,7 @@
     <header class="bio-header">
       <div class="avatar-wrapper">
         <div class="avatar-circle" id="avatar-container">
-          <!-- Iniciales IG -->
-          <span class="avatar-initials" id="avatar-initials">IG</span>
-          <!-- NOTA: Si en el futuro deseas usar una foto, añade el src y descomenta:
-          <img src="tu-foto.jpg" alt="Itxaso Gurrea" class="avatar-img" id="avatar-photo">
-          -->
+          <img src="foto.jpg" alt="Itxaso Gurrea" class="avatar-img" id="avatar-photo">
         </div>
         <!-- Pequeño icono de hoja / calma / coaching -->
         <div class="avatar-badge" title="Coaching & Bienestar" aria-hidden="true">
