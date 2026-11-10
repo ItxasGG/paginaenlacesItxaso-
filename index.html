@@ -557,6 +557,39 @@
       filter: drop-shadow(0 4px 12px rgba(255, 179, 193, 0.6));
     }
 
+    /* Botón "Consigue tu propia página de enlaces" */
+    .cta-own-page {
+      margin-top: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: 999px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--text-white);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      text-align: center;
+      box-shadow: var(--shadow-soft);
+      transition: var(--transition-smooth);
+    }
+
+    .cta-own-page:hover {
+      background: var(--glass-bg-hover);
+      border-color: var(--glass-border-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .cta-own-page:active {
+      background: var(--glass-bg-active);
+      transform: translateY(0);
+    }
+
     /* Toast emergente de confirmación */
     .toast {
       position: fixed;
@@ -804,6 +837,9 @@
     <footer class="bio-footer">
       <img src="logo-pink.png" alt="Logo Itxaso Gurrea" class="footer-logo">
       <p>© 2026 Itxaso Gurrea · Todos los derechos reservados</p>
+      <a href="https://www.estrategiadigitalestrella.com" target="_blank" rel="noopener noreferrer" class="cta-own-page" id="link-own-page">
+        Consigue tu propia página de enlaces
+      </a>
     </footer>
 
   </main>
