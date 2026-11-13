@@ -590,6 +590,103 @@
       transform: translateY(0);
     }
 
+    /* ==========================================================================
+       CHATBOT FLOTANTE "PREGUNTA AL COACH"
+       ========================================================================== */
+    .coach-chat-bubble {
+      position: fixed;
+      right: 20px;
+      bottom: calc(20px + env(safe-area-inset-bottom));
+      z-index: 200;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 999px;
+      background: #FFB3C1;
+      color: #2a1a1e;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.35);
+      transition: var(--transition-smooth);
+    }
+
+    .coach-chat-bubble:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 14px 34px -6px rgba(0, 0, 0, 0.42);
+    }
+
+    .coach-chat-panel {
+      position: fixed;
+      right: 20px;
+      bottom: calc(84px + env(safe-area-inset-bottom));
+      z-index: 200;
+      width: min(380px, calc(100vw - 32px));
+      height: min(580px, calc(100vh - 120px));
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.45);
+      /* Oculto sin display:none para que el widget se cargue con su tamaño real */
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(16px) scale(0.98);
+      transform-origin: bottom right;
+      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+    }
+
+    .coach-chat-panel.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+
+    .coach-chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, var(--color-grad-start), var(--color-grad-end));
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .coach-chat-close {
+      display: flex;
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 8px;
+    }
+
+    .coach-chat-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .coach-chat-body {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 480px) {
+      .coach-chat-bubble {
+        right: 16px;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+      }
+      .coach-chat-panel {
+        right: 16px;
+        bottom: calc(76px + env(safe-area-inset-bottom));
+      }
+    }
+
     /* Toast emergente de confirmación */
     .toast {
       position: fixed;
@@ -623,7 +720,7 @@
     /* Adaptaciones responsivas */
     @media (max-width: 480px) {
       body {
-        padding: 12px 10px calc(16px + env(safe-area-inset-bottom)) 10px;
+        padding: 12px 10px calc(80px + env(safe-area-inset-bottom)) 10px;
         align-items: flex-start;
       }
       
@@ -865,6 +962,28 @@
 
   </main>
 
+  <!-- CHATBOT FLOTANTE "PREGUNTA AL COACH" (Pickaxe) -->
+  <div class="coach-chat-panel" id="coach-chat-panel" role="dialog" aria-label="Pregunta al coach" aria-hidden="true">
+    <div class="coach-chat-header">
+      <span>Pregunta al coach</span>
+      <button type="button" class="coach-chat-close" id="coach-chat-close" aria-label="Cerrar chat">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="coach-chat-body">
+      <div id="deployment-eb1996a7-986f-4179-8712-5ac2fcd917f5"></div>
+    </div>
+  </div>
+
+  <button type="button" class="coach-chat-bubble" id="coach-chat-bubble" aria-controls="coach-chat-panel" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    <span>Pregunta al coach</span>
+  </button>
+
+  <script src="https://studio.pickaxe.co/api/embed/bundle.js" defer></script>
+
   <!-- Notificación Toast -->
   <div class="toast" id="toast-msg" role="status" aria-live="polite">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#68ba00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -876,6 +995,25 @@
   <!-- Lógica JavaScript integrada -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Chatbot flotante "Pregunta al coach"
+      const chatBubble = document.getElementById('coach-chat-bubble');
+      const chatPanel = document.getElementById('coach-chat-panel');
+      const chatClose = document.getElementById('coach-chat-close');
+
+      function setChatOpen(open) {
+        chatPanel.classList.toggle('open', open);
+        chatPanel.setAttribute('aria-hidden', String(!open));
+        chatBubble.setAttribute('aria-expanded', String(open));
+      }
+
+      chatBubble.addEventListener('click', () => {
+        setChatOpen(!chatPanel.classList.contains('open'));
+      });
+      chatClose.addEventListener('click', () => setChatOpen(false));
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setChatOpen(false);
+      });
+
       const shareBtn = document.getElementById('btn-share');
       const toast = document.getElementById('toast-msg');
       const toastText = document.getElementById('toast-text');
