@@ -673,17 +673,126 @@
 
     .coach-chat-body {
       flex: 1;
-      overflow-y: auto;
+      min-height: 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      overscroll-behavior: contain;
     }
 
-    @media (max-width: 480px) {
+    /* El despliegue de Pickaxe es de tipo "botón flotante": pinta su propio
+       botón redondo y una ventana fija de 350x500 anclada a la derecha (que
+       en iPhone se salía por la izquierda). Ocultamos su botón y encajamos
+       su ventana dentro de nuestro panel, ocupándolo entero. */
+    #coach-chat-panel .pickaxe-embed {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #coach-chat-panel .pickaxe-embed > button {
+      display: none !important;
+    }
+
+    #coach-chat-panel .pickaxe-embed > div {
+      position: static !important;
+      inset: auto !important;
+      flex: 1 1 auto;
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      border-radius: 0 !important;
+      transform: none !important;
+      opacity: 1 !important;
+    }
+
+    /* iOS hace zoom al enfocar campos con letra < 16px, lo que desplaza
+       y recorta el panel. Forzamos 16px dentro del chat. */
+    #coach-chat-panel input,
+    #coach-chat-panel textarea,
+    #coach-chat-panel select {
+      font-size: 16px !important;
+    }
+
+    /* Botón rosa oculto mientras el chat está abierto */
+    body.coach-chat-open .coach-chat-bubble {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: scale(0.9);
+    }
+
+    /* Móvil: el chat abierto ocupa todo el área visible de la pantalla.
+       --coach-vv-h y --coach-vv-top los actualiza el JS con visualViewport,
+       de modo que el panel se encoge cuando aparece el teclado y el campo
+       de texto y la flecha de envío siguen visibles. */
+    @media (max-width: 600px) {
       .coach-chat-bubble {
         right: 16px;
         bottom: calc(16px + env(safe-area-inset-bottom));
       }
+
       .coach-chat-panel {
-        right: 16px;
-        bottom: calc(76px + env(safe-area-inset-bottom));
+        top: 0;
+        left: 0;
+        right: auto;
+        bottom: auto;
+        width: 100%;
+        max-width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        height: var(--coach-vv-h, 100dvh);
+        border-radius: 0;
+        box-shadow: none;
+        transform: translate3d(0, calc(var(--coach-vv-top, 0px) + 24px), 0);
+        transform-origin: center bottom;
+      }
+
+      .coach-chat-panel.open {
+        transform: translate3d(0, var(--coach-vv-top, 0px), 0);
+      }
+
+      .coach-chat-header {
+        flex-shrink: 0;
+        min-height: 56px;
+        padding: calc(6px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 6px calc(16px + env(safe-area-inset-left));
+        font-size: 1rem;
+      }
+
+      .coach-chat-close {
+        width: 44px;
+        height: 44px;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .coach-chat-close svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .coach-chat-body {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      /* Con el teclado abierto la zona segura inferior la tapa el teclado */
+      body.coach-kb-open .coach-chat-body {
+        padding-bottom: 0;
+      }
+
+      /* Bloqueo del scroll de la página de fondo (iOS) */
+      body.coach-chat-open {
+        position: fixed;
+        left: 0;
+        right: 0;
+        width: 100%;
+        overflow: hidden;
       }
     }
 
@@ -1000,18 +1109,90 @@
       const chatPanel = document.getElementById('coach-chat-panel');
       const chatClose = document.getElementById('coach-chat-close');
 
+      const mobileChatQuery = window.matchMedia('(max-width: 600px)');
+      const vv = window.visualViewport;
+      let savedScrollY = 0;
+      let scrollLocked = false;
+
+      // Ajusta el panel al área realmente visible (se reduce con el teclado)
+      function syncChatToViewport() {
+        if (!chatPanel.classList.contains('open') || !mobileChatQuery.matches) return;
+        const h = vv ? vv.height : window.innerHeight;
+        const top = vv ? vv.offsetTop : 0;
+        chatPanel.style.setProperty('--coach-vv-h', h + 'px');
+        chatPanel.style.setProperty('--coach-vv-top', top + 'px');
+        document.body.classList.toggle('coach-kb-open', window.innerHeight - h > 120);
+      }
+
+      function lockScroll() {
+        if (scrollLocked || !mobileChatQuery.matches) return;
+        savedScrollY = window.scrollY || window.pageYOffset || 0;
+        document.body.style.top = -savedScrollY + 'px';
+        scrollLocked = true;
+      }
+
+      function unlockScroll() {
+        if (!scrollLocked) return;
+        document.body.style.top = '';
+        scrollLocked = false;
+        // Vuelve exactamente al punto del link tree donde estaba
+        window.scrollTo({ top: savedScrollY, left: 0, behavior: 'instant' });
+      }
+
+      // Abre la ventana interna de Pickaxe (pulsando su botón oculto) si no
+      // está ya abierta. El widget puede tardar en cargar, así que también
+      // se vigila con un MutationObserver.
+      const pickaxeRoot = document.getElementById('deployment-eb1996a7-986f-4179-8712-5ac2fcd917f5');
+      function ensurePickaxeOpen() {
+        if (!chatPanel.classList.contains('open')) return;
+        const popup = pickaxeRoot.querySelector(':scope > div');
+        const fab = pickaxeRoot.querySelector(':scope > button');
+        if (!popup && fab) fab.click();
+      }
+      new MutationObserver(ensurePickaxeOpen).observe(pickaxeRoot, { childList: true });
+
       function setChatOpen(open) {
+        if (open) lockScroll();
         chatPanel.classList.toggle('open', open);
+        document.body.classList.toggle('coach-chat-open', open);
         chatPanel.setAttribute('aria-hidden', String(!open));
         chatBubble.setAttribute('aria-expanded', String(open));
+        if (open) {
+          ensurePickaxeOpen();
+          syncChatToViewport();
+          chatClose.focus({ preventScroll: true });
+        } else {
+          if (chatPanel.contains(document.activeElement)) document.activeElement.blur();
+          document.body.classList.remove('coach-kb-open');
+          chatPanel.style.removeProperty('--coach-vv-h');
+          chatPanel.style.removeProperty('--coach-vv-top');
+          unlockScroll();
+          chatBubble.focus({ preventScroll: true });
+        }
       }
+
+      if (vv) {
+        vv.addEventListener('resize', syncChatToViewport);
+        vv.addEventListener('scroll', syncChatToViewport);
+      }
+      window.addEventListener('resize', syncChatToViewport);
+      // Si se gira el móvil o se pasa a escritorio con el chat abierto
+      mobileChatQuery.addEventListener('change', () => {
+        if (!chatPanel.classList.contains('open')) return;
+        if (mobileChatQuery.matches) { lockScroll(); syncChatToViewport(); }
+        else {
+          chatPanel.style.removeProperty('--coach-vv-h');
+          chatPanel.style.removeProperty('--coach-vv-top');
+          unlockScroll();
+        }
+      });
 
       chatBubble.addEventListener('click', () => {
         setChatOpen(!chatPanel.classList.contains('open'));
       });
       chatClose.addEventListener('click', () => setChatOpen(false));
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') setChatOpen(false);
+        if (e.key === 'Escape' && chatPanel.classList.contains('open')) setChatOpen(false);
       });
 
       const shareBtn = document.getElementById('btn-share');
